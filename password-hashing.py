@@ -1,6 +1,8 @@
 import re 
 import bcrypt
-
+from pymongo import MongoClient
+DB_NAME = "user_db"
+COLLECTION_NAME = "users"
 def get_user_info():
     print("Password requirements:")
     print("- At least 8 characters long")
@@ -26,7 +28,7 @@ def get_user_info():
             
             return username, password
         except ValueError as e:
-            print(f"Error: {e}. Please try again.")
+            print(f"Error: {e}. Please try again.\n")
 
 
 def hash_password(password):
@@ -38,18 +40,45 @@ def hash_password(password):
 def check_password(password, hashed):
     return bcrypt.checkpw(password.encode("utf-8"), hashed)
 
-def login(hashed):
-    password = input("\nEnter password to login: ").strip()
-    if check_password(password, hashed):
-        print("\nLogin Sucessful!")
+def login(users_collection):
+    username = input("\nEnter your username: ").strip()
+    password = input("Enter your password: ").strip()
+
+    user = users_collection.find_one({"username": username})
+    if not user:
+        print("Username not found.")
+    
+    stored_hashed = user["hashed_password"].encode("utf-8")
+    if check_password(password, stored_hashed):
+        print("\nLogin successful!")
     else:
-        print("\nLogin Failed!")
+        print("\nLogin Failed")
+    
 
 
 if __name__ == "__main__":
-    username, password = get_user_info()
-    hashed_password = hash_password(password)
-    login_attempt = login(hashed_password)
+    try:
+        client = MongoClient("mongodb://localhost:27017/", serverSelectionTimeoutMS=5000)
+        client.server_info()
+    except Exception as e:
+        print(print(f"Error: could not connect to MongoDB. {e}"))
+        exit()
 
-    print(f"\nUsername: {username}")
-    print(f"hashed password: {hashed_password.decode('utf-8')}")
+    db = client[DB_NAME]
+    users = db[COLLECTION_NAME]
+
+    username, password = get_user_info()
+    if users.find_one({"username": username}):
+        print(f"Error: Username '{username}' already exists. Please choose a diffeernt username.")
+
+
+    hashed_password = hash_password(password)
+    users.insert_one({
+        "username": username,
+        "hashed_password": hashed_password.decode('utf-8')
+    })
+
+    print(f"\nUser '{username}' saved to MongoDB!")
+
+    login(users)
+    
