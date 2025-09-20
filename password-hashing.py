@@ -1,6 +1,7 @@
 import re 
 import bcrypt
 from pymongo import MongoClient
+from pymongo.errors import DuplicateKeyError
 DB_NAME = "user_db"
 COLLECTION_NAME = "users"
 def get_user_info():
@@ -47,6 +48,7 @@ def login(users_collection):
     user = users_collection.find_one({"username": username})
     if not user:
         print("Username not found.")
+        return
     
     stored_hashed = user["hashed_password"].encode("utf-8")
     if check_password(password, stored_hashed):
@@ -67,18 +69,20 @@ if __name__ == "__main__":
     db = client[DB_NAME]
     users = db[COLLECTION_NAME]
 
+    users.create_index("username", unique=True)
+
     username, password = get_user_info()
-    if users.find_one({"username": username}):
-        print(f"Error: Username '{username}' already exists. Please choose a diffeernt username.")
-
-
     hashed_password = hash_password(password)
-    users.insert_one({
-        "username": username,
-        "hashed_password": hashed_password.decode('utf-8')
-    })
-
-    print(f"\nUser '{username}' saved to MongoDB!")
+        
+    try:
+        users.insert_one({
+            "username": username,
+            "hashed_password": hashed_password.decode("utf-8")
+        })
+        print(f"\n User '{username}' saved to MongoDB!")
+    except DuplicateKeyError:
+        print(f"Error: Username '{username}' already exists. Please choose a different one.")
+        exit()
 
     login(users)
     
