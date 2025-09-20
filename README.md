@@ -2,7 +2,7 @@
 
 This project is a simple **Python-based user authentication system** that uses **bcrypt for password hashing** and **MongoDB for user storage**.
 
-It demonstrates:
+demonstrates:
 -  Enforcing strong password rules (length + uppercase + lowercase + digit + special character)  
 -  Hashing passwords securely with bcrypt (no plain-text storage)  
 -  Storing and retrieving user credentials in MongoDB  
@@ -47,3 +47,7 @@ Enter your password: StrongPass!123
 
 Login successful!
 ```
+---
+🐳 MongoDB Shell
+
+<img width="831" height="136" alt="image" src="https://github.com/user-attachments/assets/945a28b7-12da-4166-8a56-ba52bf7a7f48" />
